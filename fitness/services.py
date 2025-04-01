@@ -2,7 +2,7 @@
 import requests
 from datetime import datetime, timedelta
 from django.conf import settings
-from twilio.rest import Client
+from django.core.mail import send_mail
 
 def get_recovery(access_token):
     yesterday = datetime.utcnow().date() - timedelta(days=1)
@@ -41,10 +41,22 @@ def suggest_workout(score, preference):
     }
     return suggestions.get(preference, {}).get(level, "Rest day!")
 
-def send_sms(to, message):
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-    client.messages.create(
-        body=message,
-        from_=settings.TWILIO_PHONE_NUMBER,
-        to=to
+def send_workout_suggestion(to_email, score, preference):
+    workout = suggest_workout(score, preference)
+    subject = "Your Personalized Workout Suggestion"
+    message = f"Based on your recovery score of {score}, here's your suggested workout:\n\n{workout}"
+    
+    send_email(
+        to_email=to_email,
+        subject=subject,
+        message=message
+    )
+
+def send_email(to_email, subject, message):
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[to_email],
+        fail_silently=False,
     )
