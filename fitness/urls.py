@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("whoop/login/", views.whoop_login, name="whoop_login"),
-    path("whoop/callback/", views.whoop_callback, name="whoop_callback"),
+    path('signup/', views.SignUpView.as_view(), name='signup'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/edit/', views.EditProfileView.as_view(), name='edit_profile'),
 ]

@@ -16,8 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import views as auth_views
+from fitness import views
+
+def root_redirect(request):
+    if request.user.is_authenticated:
+        return redirect('profile')
+    return redirect('signup')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('fitness.urls')),
+    path('', root_redirect, name='root'),
+    path('fitness/', include('fitness.urls')),
+    path('login/', auth_views.LoginView.as_view(template_name='fitness/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='root', http_method_names=['post', 'get']), name='logout'),
 ]

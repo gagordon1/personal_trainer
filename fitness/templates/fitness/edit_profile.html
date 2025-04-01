@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Edit Profile</h2>
+        <a href="{% url 'profile' %}" class="text-gray-600 hover:text-gray-900">← Back to Profile</a>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Phone Number -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+            {{ form.phone_number }}
+        </div>
+
+        <!-- Primary Goal -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">Primary Goal</label>
+            {{ form.goal }}
+        </div>
+
+        <!-- Workouts per Week -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">Workouts per Week</label>
+            {{ form.workouts_per_week }}
+        </div>
+
+        <!-- Available Equipment -->
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">Available Equipment</label>
+            <div class="grid grid-cols-2 gap-2">
+                {{ form.available_equipment }}
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="bg-gray-900 text-white px-6 py-2 rounded hover:bg-gray-800">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %} 
