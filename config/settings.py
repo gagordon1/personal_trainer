@@ -161,3 +161,13 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'profile'
 LOGOUT_REDIRECT_URL = 'root'
 
+# AI Provider Settings
+OPENAI_MODEL_NAME = "gpt-4o-mini"
+ANTHROPIC_MODEL_NAME = "claude-3-opus-20240229"
+
+# AI Provider Settings
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
+
