@@ -12,32 +12,50 @@
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Email</label>
             {{ form.email }}
+            {% if form.email.errors %}
+            <p class="text-red-500 text-sm">{{ form.email.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Password</label>
             {{ form.password1 }}
+            {% if form.password1.errors %}
+            <p class="text-red-500 text-sm">{{ form.password1.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
             {{ form.password2 }}
+            {% if form.password2.errors %}
+            <p class="text-red-500 text-sm">{{ form.password2.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Phone Number (Optional)</label>
             {{ form.phone_number }}
+            {% if form.phone_number.errors %}
+            <p class="text-red-500 text-sm">{{ form.phone_number.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <!-- Fitness Goals -->
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Your Primary Goal</label>
             {{ form.goal }}
+            {% if form.goal.errors %}
+            <p class="text-red-500 text-sm">{{ form.goal.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Workouts per Week</label>
             {{ form.workouts_per_week }}
+            {% if form.workouts_per_week.errors %}
+            <p class="text-red-500 text-sm">{{ form.workouts_per_week.errors.0 }}</p>
+            {% endif %}
         </div>
         
         <!-- Equipment -->
@@ -46,10 +64,21 @@
             <div class="grid grid-cols-2 gap-2">
                 {{ form.available_equipment }}
             </div>
+            {% if form.available_equipment.errors %}
+            <p class="text-red-500 text-sm">{{ form.available_equipment.errors.0 }}</p>
+            {% endif %}
         </div>
+
+        {% if form.non_field_errors %}
+        <div class="text-red-500 text-sm">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
         
         <div class="text-center">
-            <button type="submit" class="bg-black text-white p-2 rounded">Create Profile</button>
+            <button type="submit" class="bg-black text-white p-2 rounded hover:bg-gray-800">Create Profile</button>
         </div>
     </form>
 </div>

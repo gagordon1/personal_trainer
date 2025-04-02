@@ -3,6 +3,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from .ai_providers import AIProvider
 from ..models import UserProfile, WorkoutPlan, DailyWorkout, Exercise, ExerciseSet
 from datetime import datetime, timedelta
+import json
 
 class ExerciseData(TypedDict):
     name: str
@@ -118,15 +119,24 @@ class WorkoutPlanGenerator:
 
     def _create_exercise(self, exercise_data: ExerciseData) -> Exercise:
         """Create an Exercise instance from exercise data."""
+        # Extract required fields with defaults
+        name = exercise_data.get('name', 'Unnamed Exercise')
+        description = exercise_data.get('description', '')
+        muscle_groups = exercise_data.get('muscle_groups', [])
+        equipment_needed = exercise_data.get('equipment_needed', [])
+        difficulty_level = exercise_data.get('difficulty_level', 1)
+        instructions = exercise_data.get('instructions', '')
+        tips = exercise_data.get('tips', '')
+
         exercise, created = Exercise.objects.get_or_create(
-            name=exercise_data['name'],
-            muscle_groups=exercise_data['muscle_groups'],
+            name=name,
+            muscle_groups=muscle_groups,
             defaults={
-                'description': exercise_data['description'],
-                'equipment_needed': exercise_data['equipment_needed'],
-                'difficulty_level': exercise_data['difficulty_level'],
-                'instructions': exercise_data['instructions'],
-                'tips': exercise_data.get('tips', '')
+                'description': description,
+                'equipment_needed': equipment_needed,
+                'difficulty_level': difficulty_level,
+                'instructions': instructions,
+                'tips': tips
             }
         )
         return exercise

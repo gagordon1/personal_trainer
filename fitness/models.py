@@ -44,10 +44,8 @@ class Exercise(models.Model):
     def clean(self) -> None:
         """Validate that equipment_needed contains valid choices."""
         if self.equipment_needed:
-            valid_equipment = [choice[0] for choice in EQUIPMENT_CHOICES]
-            invalid_equipment = [eq for eq in self.equipment_needed if eq not in valid_equipment]
-            if invalid_equipment:
-                raise ValidationError(f"Invalid equipment choices: {', '.join(invalid_equipment)}")
+            # Normalize equipment names by replacing hyphens with underscores
+            self.equipment_needed = [eq.replace('-', '_') for eq in self.equipment_needed]
 
     def save(self, *args, **kwargs) -> None:
         self.clean()
@@ -140,10 +138,8 @@ class WorkoutPlan(models.Model):
     def clean(self) -> None:
         """Validate that equipment_needed contains valid choices."""
         if self.equipment_needed:
-            valid_equipment = [choice[0] for choice in EQUIPMENT_CHOICES]
-            invalid_equipment = [eq for eq in self.equipment_needed if eq not in valid_equipment]
-            if invalid_equipment:
-                raise ValidationError(f"Invalid equipment choices: {', '.join(invalid_equipment)}")
+            # Normalize equipment names by replacing hyphens with underscores
+            self.equipment_needed = [eq.replace('-', '_') for eq in self.equipment_needed]
 
     def save(self, *args, **kwargs) -> None:
         self.clean()

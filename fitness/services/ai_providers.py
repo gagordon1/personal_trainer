@@ -1,56 +1,65 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Protocol, cast
 import openai
 from django.conf import settings
 from openai.types.chat import ChatCompletionMessageParam
 import json
 
-class AIProvider(ABC):
-    """Abstract base class for AI providers."""
+class AIProvider(Protocol):
+    """Protocol defining the interface for AI providers."""
     
-    @abstractmethod
-    def generate_completion(self, messages: List[ChatCompletionMessageParam], max_tokens: int = 500) -> str:
-        """Generate a completion from the AI model."""
-        pass
+    def generate_completion(self, messages: List[ChatCompletionMessageParam]) -> Dict[str, Any]:
+        """Generate a completion from the AI model.
+        
+        Args:
+            messages: List of chat messages to send to the model
+            
+        Returns:
+            Dict containing the model's response
+        """
+        ...
 
-class OpenAIProvider(AIProvider):
-    """OpenAI implementation of the AI provider."""
+class OpenAIProvider:
+    """Implementation of AIProvider using OpenAI's API."""
     
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or settings.OPENAI_API_KEY
-        self.model = model or settings.OPENAI_MODEL_NAME
-        self.client = openai.OpenAI(api_key=self.api_key)
-    
-    def generate_completion(self, messages: List[ChatCompletionMessageParam], max_tokens: int = 500) -> Dict[str, Any]:
-        """Generate a completion from the AI model."""
+    def __init__(self):
+        """Initialize the OpenAI client."""
+        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.model = "gpt-4-turbo-preview"  # Using GPT-4 Turbo for better JSON handling
+        
+    def generate_completion(self, messages: List[ChatCompletionMessageParam]) -> Dict[str, Any]:
+        """Generate a completion from OpenAI's API.
+        
+        Args:
+            messages: List of chat messages to send to the model
+            
+        Returns:
+            Dict containing the model's response
+            
+        Raises:
+            ValueError: If the response is not valid JSON
+        """
         try:
-            # For now, return a mock response
-            # In production, this would call the actual OpenAI API
-            response = {
-                "weekly_plan": [
-                    {
-                        "day": "Monday",
-                        "focus": "Upper Body",
-                        "description": "Upper body workout focusing on chest and back",
-                        "duration": "45-60 minutes",
-                        "intensity": 4,
-                        "notes": "Focus on form",
-                        "exercises": [
-                            {
-                                "name": "Push-ups",
-                                "sets": 3,
-                                "reps": "12-15",
-                                "rest": "60 seconds"
-                            }
-                        ]
-                    }
-                ],
-                "equipment_needed": ["dumbbells", "pull-up bar"],
-                "general_guidelines": ["Stay hydrated", "Warm up properly"]
-            }
-            return response
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,  # Balanced between creativity and consistency
+                response_format={"type": "json_object"}  # Ensure JSON response
+            )
+            
+            # Extract the response content
+            content = response.choices[0].message.content
+            if content is None:
+                raise ValueError("OpenAI response content is None")
+            
+            # Parse the JSON response
+            try:
+                return json.loads(cast(str, content))
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to parse OpenAI response as JSON: {e}")
+                
         except Exception as e:
-            raise ValueError(f"Error generating completion: {str(e)}") from e
+            raise ValueError(f"OpenAI API error: {str(e)}")
 
 class AnthropicProvider(AIProvider):
     """Anthropic (Claude) implementation of the AI provider."""
