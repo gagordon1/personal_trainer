@@ -123,9 +123,9 @@ class UserProfile(models.Model):
 
 class WorkoutPlan(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workout_plans')
-    week_start_date = models.DateField(null=True, blank=True)  # Temporarily allow null
-    equipment_needed = models.JSONField(default=list)  # Add default empty list
-    general_guidelines = models.JSONField(default=dict)  # Add default empty dict
+    week_start_date = models.DateField()  # Remove null=True and blank=True
+    equipment_needed = models.JSONField(default=list)
+    general_guidelines = models.JSONField(default=dict)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
 

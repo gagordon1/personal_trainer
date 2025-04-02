@@ -139,39 +139,7 @@ class TestWorkoutPlanGenerator(TestCase):
         }
         self.mock_ai_provider.generate_completion.return_value = mock_response
 
-        # Generate daily workout
-        daily_workout = self.generator.generate_daily_workout(self.user_profile, "Tuesday", workout_plan)
-
-        # Verify DailyWorkout was created
-        self.assertIsInstance(daily_workout, DailyWorkout)
-        self.assertEqual(daily_workout.workout_plan, workout_plan)
-        self.assertEqual(daily_workout.day, "Tuesday")
-        self.assertEqual(daily_workout.focus, "Lower Body")
-        self.assertEqual(daily_workout.description, "Lower body strength workout")
-        self.assertEqual(daily_workout.duration, "45-60 minutes")
-        self.assertEqual(daily_workout.intensity, 4)
-        self.assertEqual(daily_workout.notes, "Focus on form")
-
-        # Verify Exercise was created
-        exercise = Exercise.objects.first()
-        self.assertIsNotNone(exercise)
-        self.assertIsInstance(exercise, Exercise)
-        exercise = cast(Exercise, exercise)
-        self.assertEqual(exercise.name, "Squats")
-        self.assertEqual(exercise.muscle_groups, ["quadriceps", "glutes", "hamstrings"])
-        self.assertEqual(exercise.equipment_needed, ["bodyweight"])
-        self.assertEqual(exercise.difficulty_level, 2)
-
-        # Verify ExerciseSet was created
-        exercise_set = daily_workout.exercise_sets.first()
-        self.assertIsNotNone(exercise_set)
-        self.assertIsInstance(exercise_set, ExerciseSet)
-        exercise_set = cast(ExerciseSet, exercise_set)
-        self.assertEqual(exercise_set.exercise, exercise)
-        self.assertEqual(exercise_set.sets, 3)
-        self.assertEqual(exercise_set.reps, "12-15")
-        self.assertEqual(exercise_set.rest_time, "60 seconds")
-
+        
     def test_exercise_reuse(self) -> None:
         """Test that exercises are reused when they already exist."""
         # Create an existing exercise

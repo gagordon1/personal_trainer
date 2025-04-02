@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Union, TypedDict, cast
 from openai.types.chat import ChatCompletionMessageParam
 from .ai_providers import AIProvider
 from ..models import UserProfile, WorkoutPlan, DailyWorkout, Exercise, ExerciseSet
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 
 class ExerciseData(TypedDict):
@@ -33,15 +33,6 @@ class WeeklyPlanResponse(TypedDict):
     equipment_needed: List[str]
     general_guidelines: List[str]
 
-class DailyWorkoutResponse(TypedDict):
-    day: str
-    focus: str
-    description: str
-    duration: str
-    intensity: int
-    notes: str
-    exercises: List[ExerciseData]
-
 class WorkoutPlanGenerator:
     def __init__(self, ai_provider: AIProvider):
         self.ai_provider = ai_provider
@@ -54,6 +45,7 @@ class WorkoutPlanGenerator:
         Available equipment: {', '.join(user_profile.get_available_equipment_display())}
         
         Please provide a structured JSON response with the following format:
+        There must be 7 workouts in the weekly plan.
         {{
             "weekly_plan": [
                 {{
@@ -78,43 +70,26 @@ class WorkoutPlanGenerator:
                             "weight": "Optional weight",
                             "notes": "Optional notes for this specific set"
                         }}
+                        {{
+                            "name": "Exercise name",
+                            "description": "Detailed description of the exercise",
+                            "muscle_groups": ["list", "of", "muscle", "groups"],
+                            "equipment_needed": ["list", "of", "required", "equipment"],
+                            "difficulty_level": 1,
+                            "instructions": "Step-by-step instructions",
+                            "tips": "Tips for proper form",
+                            "sets": 3,
+                            "reps": "12-15",
+                            "rest": "60 seconds",
+                            "weight": "Optional weight",
+                            "notes": "Optional notes for this specific set"
+                        }}
+                        ...
                     ]
                 }}
             ],
             "equipment_needed": ["list", "of", "equipment"],
             "general_guidelines": ["list", "of", "guidelines"]
-        }}"""
-
-    def _create_daily_workout_prompt(self, user_profile: UserProfile, day: str) -> str:
-        """Create a prompt for generating a daily workout."""
-        return f"""Generate a workout for {day} for a user with the following profile:
-        Goal: {user_profile.goal}
-        Available equipment: {', '.join(user_profile.get_available_equipment_display())}
-        
-        Please provide a structured JSON response with the following format:
-        {{
-            "day": "{day}",
-            "focus": "Workout focus",
-            "description": "Description of the workout",
-            "duration": "45-60 minutes",
-            "intensity": 4,
-            "notes": "Additional notes",
-            "exercises": [
-                {{
-                    "name": "Exercise name",
-                    "description": "Detailed description of the exercise",
-                    "muscle_groups": ["list", "of", "muscle", "groups"],
-                    "equipment_needed": ["list", "of", "required", "equipment"],
-                    "difficulty_level": 1,
-                    "instructions": "Step-by-step instructions",
-                    "tips": "Tips for proper form",
-                    "sets": 3,
-                    "reps": "12-15",
-                    "rest": "60 seconds",
-                    "weight": "Optional weight",
-                    "notes": "Optional notes for this specific set"
-                }}
-            ]
         }}"""
 
     def _create_exercise(self, exercise_data: ExerciseData) -> Exercise:
@@ -162,17 +137,29 @@ class WorkoutPlanGenerator:
         ]
         response = cast(WeeklyPlanResponse, self.ai_provider.generate_completion(messages))
         
-        # Create the workout plan
-        week_start_date = datetime.now().date()
+        # Calculate the start of the current week (Sunday)
+        today = datetime.now().date()
+        days_since_sunday = today.weekday() + 1  # +1 because weekday() returns 0-6 (Mon-Sun)
+        week_start_date = today - timedelta(days=days_since_sunday)
+        week_end_date = week_start_date + timedelta(days=6)
+        
+        # Delete any existing workout plans for this week
+        WorkoutPlan.objects.filter(
+            user=user_profile.user,
+            week_start_date__gte=week_start_date,
+            week_start_date__lte=week_end_date
+        ).delete()
+        
+        # Create the new workout plan
         workout_plan = WorkoutPlan.objects.create(
             user=user_profile.user,
             week_start_date=week_start_date,
-            equipment_needed=response['equipment_needed'],
-            general_guidelines=response['general_guidelines']
+            equipment_needed=response.get('equipment_needed', []),
+            general_guidelines=response.get('general_guidelines', [])
         )
 
-        # Create daily workouts and their exercises
-        for workout_data in response['weekly_plan']:
+        # Create daily workouts for the full week
+        for workout_data in response.get('weekly_plan', []):
             daily_workout = DailyWorkout.objects.create(
                 workout_plan=workout_plan,
                 day=workout_data['day'],
@@ -189,29 +176,19 @@ class WorkoutPlanGenerator:
 
         return workout_plan
 
-    def generate_daily_workout(self, user_profile: UserProfile, day: str, workout_plan: WorkoutPlan) -> DailyWorkout:
-        """Generate a daily workout for a specific day."""
-        prompt = self._create_daily_workout_prompt(user_profile, day)
-        messages: List[ChatCompletionMessageParam] = [
-            {"role": "system", "content": "You are a professional personal trainer creating personalized workout plans. You must always respond with valid JSON."},
-            {"role": "user", "content": prompt}
-        ]
-        response = cast(DailyWorkoutResponse, self.ai_provider.generate_completion(messages))
+    def _is_remaining_day(self, day: str, today: date, week_end_date: date) -> bool:
+        """Check if a given day falls within the remaining days of the week."""
+        day_mapping = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+            'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        }
+        day_num = day_mapping.get(day)
+        if day_num is None:
+            return False
+            
+        # Calculate the date for this day
+        days_since_sunday = today.weekday() + 1
+        week_start = today - timedelta(days=days_since_sunday)
+        day_date = week_start + timedelta(days=day_num)
         
-        # Create the daily workout
-        daily_workout = DailyWorkout.objects.create(
-            workout_plan=workout_plan,
-            day=response['day'],
-            focus=response['focus'],
-            description=response['description'],
-            duration=response['duration'],
-            intensity=response['intensity'],
-            notes=response.get('notes', '')
-        )
-
-        # Create exercises and their sets
-        for exercise_data in response['exercises']:
-            exercise = self._create_exercise(exercise_data)
-            self._create_exercise_set(exercise, daily_workout, exercise_data)
-
-        return daily_workout 
+        return today <= day_date <= week_end_date 

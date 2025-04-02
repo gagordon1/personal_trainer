@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Weekly Workout Plan</h2>
+        {% if not is_generating %}
+        <a href="{% url 'workout_plan' %}?generate=true" class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800">Generate New Plan</a>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if is_generating %}
+    <div class="flex flex-col items-center justify-center py-12">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-black mb-4"></div>
+        <p class="text-lg text-gray-600">Generating your personalized workout plan...</p>
+        <p class="text-sm text-gray-500 mt-2">This may take a few moments</p>
+    </div>
+    {% elif workout_plan %}
+        {% if week_start_date %}
+        <div class="mb-6">
+            <p class="text-gray-600">Week of {{ week_start_date|date:"F j" }} - {{ week_end_date|date:"F j, Y" }}</p>
+        </div>
+        {% endif %}
+
+        {% if equipment_needed %}
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">Equipment Needed</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for equipment in equipment_needed %}
+                    <span class="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm">
+                        {{ equipment }}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if general_guidelines %}
+        <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-2">General Guidelines</h3>
+            <ul class="list-disc pl-4 space-y-1">
+                {% for guideline in general_guidelines %}
+                    <li class="text-gray-600">{{ guideline }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="space-y-6">
+            {% for workout in daily_workouts %}
+            <a href="{% url 'daily_workout' workout.id %}" class="block">
+                <div class="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors">
+                    <h3 class="text-lg font-semibold mb-2">{{ workout.day }}: {{ workout.focus }}</h3>
+                    <p class="text-gray-600 mb-4">{{ workout.description }}</p>
+                    
+                    <div class="space-y-4">
+                        {% for set in workout.exercise_sets.all %}
+                        <div class="bg-white p-4 rounded shadow-sm">
+                            <h4 class="font-medium">{{ set.exercise.name }}</h4>
+                            <p class="text-sm text-gray-600">{{ set.exercise.description }}</p>
+                            <div class="mt-2 text-sm">
+                                <span class="text-gray-500">{{ set.sets }} sets × {{ set.reps }} reps</span>
+                                {% if set.weight %}
+                                <span class="text-gray-500">@ {{ set.weight }}kg</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <p class="text-gray-600">No workout plan generated yet.</p>
+            <a href="{% url 'workout_plan' %}?generate=true" class="inline-block mt-4 bg-black text-white px-6 py-2 rounded hover:bg-gray-800">Generate Your First Plan</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

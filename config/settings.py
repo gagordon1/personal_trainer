@@ -162,12 +162,18 @@ LOGIN_REDIRECT_URL = 'profile'
 LOGOUT_REDIRECT_URL = 'root'
 
 # AI Provider Settings
-OPENAI_MODEL_NAME = "gpt-4o-mini"
+OPENAI_MODEL_NAME = "gpt-4o"
 ANTHROPIC_MODEL_NAME = "claude-3-opus-20240229"
 
 # AI Provider Settings
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
+# Session Configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 
